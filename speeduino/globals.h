@@ -1486,10 +1486,12 @@ struct config16 {
   //Bytes 0
   byte timEmuCLTEnable : 1;
   byte timEmuIATEnable : 1;
+  byte timEmuMAPEnable : 1;
 
-  //Bytes 1 - 2
+  //Bytes 1 - 3
   byte timEmuCLTValue;
   byte timEmuIATValue;
+  byte timEmuMAPValue;
 
 #if defined(CORE_AVR)
   };

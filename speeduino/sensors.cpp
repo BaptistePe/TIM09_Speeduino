@@ -497,7 +497,10 @@ static inline uint16_t mapADCToMAP(uint16_t mapADC, int8_t mapMin, uint16_t mapM
 }
 
 static inline void setMAPValuesFromReadings(const map_adc_readings_t &readings, const config2 &page2, bool useEMAP, statuses &current) {
-  current.MAP = mapADCToMAP(readings.mapADC, page2.mapMin, page2.mapMax); //Get the current MAP value
+  current.MAP = configPage16.timEmuMAPEnable != 1
+    ? mapADCToMAP(readings.mapADC, page2.mapMin, page2.mapMax) //Get the current MAP value
+    : configPage16.timEmuMAPValue;
+
   //Repeat for EMAP if it's enabled
   if(useEMAP) {
     current.EMAP = mapADCToMAP(readings.emapADC, page2.EMAPMin, page2.EMAPMax);
