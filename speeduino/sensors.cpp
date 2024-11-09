@@ -558,25 +558,29 @@ void readTPS(bool useFilter)
   else { currentStatus.tpsADC = tempTPS; }
   uint8_t tempADC = currentStatus.tpsADC; //The tempADC value is used in order to allow TunerStudio to recover and redo the TPS calibration if this somehow gets corrupted
 
-  if(configPage2.tpsMax > configPage2.tpsMin)
+  if(configPage16.timEmuTPSEnable !=1)
   {
-    //Check that the ADC values fall within the min and max ranges (Should always be the case, but noise can cause these to fluctuate outside the defined range).
-    tempADC = clamp(tempADC, configPage2.tpsMin, configPage2.tpsMax);
-    currentStatus.TPS = map(tempADC, configPage2.tpsMin, configPage2.tpsMax, 0, 200); //Take the raw TPS ADC value and convert it into a TPS% based on the calibrated values
-  }
-  else
-  {
-    //This case occurs when the TPS +5v and gnd are wired backwards, but the user wishes to retain this configuration.
-    //In such a case, tpsMin will be greater then tpsMax and hence checks and mapping needs to be reversed
+    if(configPage2.tpsMax > configPage2.tpsMin)
+    {
+      //Check that the ADC values fall within the min and max ranges (Should always be the case, but noise can cause these to fluctuate outside the defined range).
+      tempADC = clamp(tempADC, configPage2.tpsMin, configPage2.tpsMax);
+      currentStatus.TPS = map(tempADC, configPage2.tpsMin, configPage2.tpsMax, 0, 200); //Take the raw TPS ADC value and convert it into a TPS% based on the calibrated values
+    }
+    else
+    {
+      //This case occurs when the TPS +5v and gnd are wired backwards, but the user wishes to retain this configuration.
+      //In such a case, tpsMin will be greater then tpsMax and hence checks and mapping needs to be reversed
 
-    tempADC = UINT8_MAX - tempADC; //Reverse the ADC values
-    uint8_t tempTPSMax = UINT8_MAX - configPage2.tpsMax;
-    uint8_t tempTPSMin = UINT8_MAX - configPage2.tpsMin;
+      tempADC = UINT8_MAX - tempADC; //Reverse the ADC values
+      uint8_t tempTPSMax = UINT8_MAX - configPage2.tpsMax;
+      uint8_t tempTPSMin = UINT8_MAX - configPage2.tpsMin;
 
-    //All checks below are reversed from the standard case above
-    tempADC = clamp(tempADC, tempTPSMin, tempTPSMax);
-    currentStatus.TPS = map(tempADC, tempTPSMin, tempTPSMax, 0, 200);
+      //All checks below are reversed from the standard case above
+      tempADC = clamp(tempADC, tempTPSMin, tempTPSMax);
+      currentStatus.TPS = map(tempADC, tempTPSMin, tempTPSMax, 0, 200);
+    }
   }
+  else { currentStatus.TPS = configPage16.timEmuTPSValue * 2U; }
 
   //Check whether the closed throttle position sensor is active
   if(configPage2.CTPSEnabled == true)
