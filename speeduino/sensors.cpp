@@ -591,7 +591,8 @@ void readCLT(bool useFilter)
   if(useFilter == true) { currentStatus.cltADC = LOW_PASS_FILTER(tempReading, configPage4.ADCFILTER_CLT, currentStatus.cltADC); }
   else { currentStatus.cltADC = tempReading; }
   
-  if (configPage16.timEmuCLTEnable != 2) {
+  if (configPage16.timEmuCLTEnable != 1)
+  {
     //Temperature calibration values are stored as positive bytes. We subtract 40 from them to allow for negative temperatures
     currentStatus.coolant = table2D_getValue(&cltCalibrationTable, currentStatus.cltADC) - CALIBRATION_TEMPERATURE_OFFSET;
   }
@@ -601,7 +602,12 @@ void readCLT(bool useFilter)
 void readIAT(void)
 {
   currentStatus.iatADC = LOW_PASS_FILTER(readAnalogSensor(pinIAT), configPage4.ADCFILTER_IAT, currentStatus.iatADC);
-  currentStatus.IAT = table2D_getValue(&iatCalibrationTable, currentStatus.iatADC) - CALIBRATION_TEMPERATURE_OFFSET;
+
+  if (configPage16.timEmuIATEnable != 1)
+  {
+    currentStatus.IAT = table2D_getValue(&iatCalibrationTable, currentStatus.iatADC) - CALIBRATION_TEMPERATURE_OFFSET;
+  }
+  else { currentStatus.IAT = configPage16.timEmuIATValue - CALIBRATION_TEMPERATURE_OFFSET; }
 }
 
 // ========================================== Baro ==========================================

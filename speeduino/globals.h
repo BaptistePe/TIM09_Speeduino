@@ -1483,9 +1483,13 @@ Page 16 - TIM's settings
 2 bytes long.
 */
 struct config16 {
-  //Bytes 0 - 1
-  byte timEmuCLTEnable;
+  //Bytes 0
+  byte timEmuCLTEnable : 1;
+  byte timEmuIATEnable : 1;
+
+  //Bytes 1 - 2
   byte timEmuCLTValue;
+  byte timEmuIATValue;
 
 #if defined(CORE_AVR)
   };
