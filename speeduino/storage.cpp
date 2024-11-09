@@ -325,6 +325,15 @@ void writeConfig(uint8_t pageNum)
       result = write_range((byte *)&configPage15, (byte *)&configPage15+sizeof(configPage15), result.changeWriteAddress(EEPROM_CONFIG15_START));
       break;
 
+    /* TIM: feat: TIM settings page */
+    case timSettings:
+      /*---------------------------------------------------
+      | Config page 16 (See storage.h for data layout)
+      -----------------------------------------------------*/
+      result = write_range((byte *)&configPage16, (byte *)&configPage16+sizeof(configPage16), result.changeWriteAddress(EEPROM_CONFIG16_START));
+      break;
+    /* TIM */
+
     default:
       break;
   }
@@ -479,6 +488,12 @@ void loadConfig(void)
   //CONFIG PAGE (15) + boost duty lookup table (LUT)
   loadTable(&boostTableLookupDuty, decltype(boostTableLookupDuty)::type_key, EEPROM_CONFIG15_MAP);
   load_range(EEPROM_CONFIG15_START, (byte *)&configPage15, (byte *)&configPage15+sizeof(configPage15));  
+
+  /* TIM: feat: TIM settings page */
+  //*********************************************************************************************************************************************************************************
+  //CONFIG PAGE (16)
+  load_range(EEPROM_CONFIG16_START, (byte *)&configPage16, (byte *)&configPage16+sizeof(configPage16));
+  /* TIM */
 
   //*********************************************************************************************************************************************************************************
 }

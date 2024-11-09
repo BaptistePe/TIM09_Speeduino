@@ -80,6 +80,10 @@ extern bool decoderHasFixedCrankingTiming;
 
 void loggerPrimaryISR(void);
 void loggerSecondaryISR(void);
+/* TIM: feat: TDC emulation */
+void loggerPrimaryISR_emulate(void);
+void loggerSecondaryISR_emulate(void);
+/* TIM */
 void loggerTertiaryISR(void);
 
 //All of the below are the 6 required functions for each decoder / pattern

@@ -265,6 +265,20 @@ void loggerSecondaryISR(void)
   }
 }
 
+/* TIM: feat: TDC emulation */
+void loggerPrimaryISR_emulate(void)
+{
+  triggerHandler();
+  addToothLogEntry(curGap, TOOTH_CRANK);
+}
+
+void loggerSecondaryISR_emulate(void)
+{
+  triggerSecondaryHandler();
+  addToothLogEntry(curGap2, TOOTH_CAM_SECONDARY);
+}
+/* TIM */
+
 /** Interrupt handler for third trigger.
 * As loggerPrimaryISR, but for the third trigger.
 */

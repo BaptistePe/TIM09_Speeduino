@@ -1149,6 +1149,9 @@ void sendPageASCII(void)
 
     case warmupPage:
     case progOutsPage:
+    /* TIM: feat: TIM settings page */
+    case timSettings:
+    /* TIM */
     default:
     #ifndef SMALL_FLASH_MODE
         primarySerial.println(F("\nPage has not been implemented yet"));

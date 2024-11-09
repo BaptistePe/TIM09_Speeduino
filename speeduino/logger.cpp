@@ -176,6 +176,14 @@ byte getTSLogEntry(uint16_t byteNum)
     case 127: statusValue = currentStatus.status5; break;
     case 128: statusValue = currentStatus.knockCount; break;
     case 129: statusValue = currentStatus.knockRetard; break;
+    /* TIM: feat: cumulative injection time */
+    case 130: statusValue = (uint8_t)(currentStatus.cumulativePW & 0xFF); break; //us
+    case 131: statusValue = (uint8_t)((currentStatus.cumulativePW >> 8) & 0xFF); break; //us
+    case 132: statusValue = (uint8_t)((currentStatus.cumulativePW >> 16) & 0xFF); break; //us
+    case 133: statusValue = (uint8_t)((currentStatus.cumulativePW >> 24) & 0xFF); break; //us
+    case 134: statusValue = lowByte(currentStatus.nbInjection); break;
+    case 135: statusValue = highByte(currentStatus.nbInjection); break;
+    /* TIM */
     default: statusValue = 0; // MISRA check
   }
 
@@ -492,7 +500,9 @@ bool is2ByteEntry(uint8_t key)
   // This array indicates which index values from the log are 2 byte values
   // This array MUST remain in ascending order
   // !!!! WARNING: If any value above 255 is required in this array, changes MUST be made to is2ByteEntry() function !!!!
-  static constexpr byte PROGMEM fsIntIndex[] = {4, 14, 17, 22, 26, 28, 33, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 76, 78, 80, 82, 86, 88, 90, 93, 95, 99, 104, 111, 121, 125 };
+  /* TIM: feat: cumulative injection time */
+  static constexpr byte PROGMEM fsIntIndex[] = {4, 14, 17, 22, 26, 28, 33, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 76, 78, 80, 82, 86, 88, 90, 93, 95, 99, 104, 111, 121, 125, 130 };
+  /* TIM */
 
   unsigned int bot = 0U;
   unsigned int mid = _countof(fsIntIndex);

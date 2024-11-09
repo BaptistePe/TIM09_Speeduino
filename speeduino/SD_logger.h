@@ -36,7 +36,9 @@
 #if defined CORE_TEENSY
     #define SD_CS_PIN BUILTIN_SDCARD
 #elif defined CORE_STM32
-    #define SD_CS_PIN PD2  //CS pin can be pretty much anything, but PD2 is one of the ones left unused from SDIO pins.
+    /* TIM: feat: SD logging */
+    #define SD_CS_PIN PC11  // CSpin can be pretty much anything, but PD2 is one of the ones left unused from SDIO pins.
+    /* TIM */
 #else
     #define SD_CS_PIN 10 //This is a made up value for now
 #endif

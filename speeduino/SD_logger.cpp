@@ -7,6 +7,9 @@
   #include <SD.h>
 #else
   #include "SdFat.h"
+  /* TIM: feat: SD logging */
+  #include "SdCard/SdSpiCard/SpiDriver/SdSpiSoftDriver.h"
+  /* TIM */
 #endif
 #include "SD_logger.h"
 #include "logger.h"
@@ -270,6 +273,9 @@ static_assert(sizeof(header_table) == (sizeof(char*) * SD_LOG_NUM_FIELDS), "Numb
 SdExFat sd;
 ExFile logFile;
 RingBuf<ExFile, RING_BUF_CAPACITY> rb;
+/* TIM: feat: SD logging */
+SoftSpiDriver<SD_MISO_PIN, SD_MOSI_PIN, SD_SCK_PIN> SD_SoftSPI;
+/* TIM */
 uint8_t SD_status = SD_STATUS_OFF;
 uint16_t currentLogFileNumber;
 bool manualLogActive = false;

@@ -21,7 +21,10 @@ Default CAN3 pins are PA8 & PA15. Alternative (ALT) pins are PB3 & PB4.
 #endif
 
 #if defined SD_LOGGING
-    SPIClass SD_SPI(PC12, PC11, PC10); //SPI3_MOSI, SPI3_MISO, SPI3_SCK
+  /* TIM: feat: SD logging */
+  // SoftSpi was used instead, declared in board_stm32_official.h
+  // SPIClass SD_SPI(PC12, PC11, PC10); //SPI3_MOSI, SPI3_MISO, SPI3_SCK
+  /* TIM */
 #endif
 
 #if defined(SRAM_AS_EEPROM)
