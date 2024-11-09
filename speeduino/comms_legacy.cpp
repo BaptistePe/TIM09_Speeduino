@@ -1149,6 +1149,7 @@ void sendPageASCII(void)
 
     case warmupPage:
     case progOutsPage:
+    case timSettings:
     default:
     #ifndef SMALL_FLASH_MODE
         primarySerial.println(F("\nPage has not been implemented yet"));

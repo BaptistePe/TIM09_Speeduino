@@ -591,7 +591,11 @@ void readCLT(bool useFilter)
   if(useFilter == true) { currentStatus.cltADC = LOW_PASS_FILTER(tempReading, configPage4.ADCFILTER_CLT, currentStatus.cltADC); }
   else { currentStatus.cltADC = tempReading; }
   
-  currentStatus.coolant = table2D_getValue(&cltCalibrationTable, currentStatus.cltADC) - CALIBRATION_TEMPERATURE_OFFSET; //Temperature calibration values are stored as positive bytes. We subtract 40 from them to allow for negative temperatures
+  if (configPage16.timEmuCLTEnable != 2) {
+    //Temperature calibration values are stored as positive bytes. We subtract 40 from them to allow for negative temperatures
+    currentStatus.coolant = table2D_getValue(&cltCalibrationTable, currentStatus.cltADC) - CALIBRATION_TEMPERATURE_OFFSET;
+  }
+  else { currentStatus.coolant = configPage16.timEmuCLTValue - CALIBRATION_TEMPERATURE_OFFSET; }
 }
 
 void readIAT(void)
