@@ -686,18 +686,20 @@ void initialiseMAPBaro(void) {
 
 void readO2(void)
 {
-  //An O2 read is only performed if an O2 sensor type is selected. This is to prevent potentially dangerous use of the O2 readings prior to proper setup/calibration
-  if(configPage6.egoType > 0U)
+  if(configPage16.timEmuAFREnable != 1)
   {
-    currentStatus.O2ADC = LOW_PASS_FILTER(readAnalogSensor(pinO2), configPage4.ADCFILTER_O2, currentStatus.O2ADC);
-    currentStatus.O2 = table2D_getValue(&o2CalibrationTable, currentStatus.O2ADC);
-  }
-  else
-  {
-    currentStatus.O2ADC = 0U;
-    currentStatus.O2 = 0U;
-  }
-  
+    //An O2 read is only performed if an O2 sensor type is selected. This is to prevent potentially dangerous use of the O2 readings prior to proper setup/calibration
+    if(configPage6.egoType > 0U)
+    {
+      currentStatus.O2ADC = LOW_PASS_FILTER(readAnalogSensor(pinO2), configPage4.ADCFILTER_O2, currentStatus.O2ADC);
+      currentStatus.O2 = table2D_getValue(&o2CalibrationTable, currentStatus.O2ADC);
+    }
+    else
+    {
+      currentStatus.O2ADC = 0U;
+      currentStatus.O2 = 0U;
+    }
+  } else { currentStatus.O2 = configPage16.timEmuAFRValue * 10; }
 }
 
 void readO2_2(void)
