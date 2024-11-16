@@ -497,7 +497,10 @@ static inline uint16_t mapADCToMAP(uint16_t mapADC, int8_t mapMin, uint16_t mapM
 }
 
 static inline void setMAPValuesFromReadings(const map_adc_readings_t &readings, const config2 &page2, bool useEMAP, statuses &current) {
-  current.MAP = mapADCToMAP(readings.mapADC, page2.mapMin, page2.mapMax); //Get the current MAP value
+  current.MAP = configPage16.timEmuMAPEnable != 1
+    ? mapADCToMAP(readings.mapADC, page2.mapMin, page2.mapMax) //Get the current MAP value
+    : configPage16.timEmuMAPValue;
+
   //Repeat for EMAP if it's enabled
   if(useEMAP) {
     current.EMAP = mapADCToMAP(readings.emapADC, page2.EMAPMin, page2.EMAPMax);
@@ -555,25 +558,29 @@ void readTPS(bool useFilter)
   else { currentStatus.tpsADC = tempTPS; }
   uint8_t tempADC = currentStatus.tpsADC; //The tempADC value is used in order to allow TunerStudio to recover and redo the TPS calibration if this somehow gets corrupted
 
-  if(configPage2.tpsMax > configPage2.tpsMin)
+  if(configPage16.timEmuTPSEnable != 1)
   {
-    //Check that the ADC values fall within the min and max ranges (Should always be the case, but noise can cause these to fluctuate outside the defined range).
-    tempADC = clamp(tempADC, configPage2.tpsMin, configPage2.tpsMax);
-    currentStatus.TPS = map(tempADC, configPage2.tpsMin, configPage2.tpsMax, 0, 200); //Take the raw TPS ADC value and convert it into a TPS% based on the calibrated values
-  }
-  else
-  {
-    //This case occurs when the TPS +5v and gnd are wired backwards, but the user wishes to retain this configuration.
-    //In such a case, tpsMin will be greater then tpsMax and hence checks and mapping needs to be reversed
+    if(configPage2.tpsMax > configPage2.tpsMin)
+    {
+      //Check that the ADC values fall within the min and max ranges (Should always be the case, but noise can cause these to fluctuate outside the defined range).
+      tempADC = clamp(tempADC, configPage2.tpsMin, configPage2.tpsMax);
+      currentStatus.TPS = map(tempADC, configPage2.tpsMin, configPage2.tpsMax, 0, 200); //Take the raw TPS ADC value and convert it into a TPS% based on the calibrated values
+    }
+    else
+    {
+      //This case occurs when the TPS +5v and gnd are wired backwards, but the user wishes to retain this configuration.
+      //In such a case, tpsMin will be greater then tpsMax and hence checks and mapping needs to be reversed
 
-    tempADC = UINT8_MAX - tempADC; //Reverse the ADC values
-    uint8_t tempTPSMax = UINT8_MAX - configPage2.tpsMax;
-    uint8_t tempTPSMin = UINT8_MAX - configPage2.tpsMin;
+      tempADC = UINT8_MAX - tempADC; //Reverse the ADC values
+      uint8_t tempTPSMax = UINT8_MAX - configPage2.tpsMax;
+      uint8_t tempTPSMin = UINT8_MAX - configPage2.tpsMin;
 
-    //All checks below are reversed from the standard case above
-    tempADC = clamp(tempADC, tempTPSMin, tempTPSMax);
-    currentStatus.TPS = map(tempADC, tempTPSMin, tempTPSMax, 0, 200);
+      //All checks below are reversed from the standard case above
+      tempADC = clamp(tempADC, tempTPSMin, tempTPSMax);
+      currentStatus.TPS = map(tempADC, tempTPSMin, tempTPSMax, 0, 200);
+    }
   }
+  else { currentStatus.TPS = configPage16.timEmuTPSValue * 2U; }
 
   //Check whether the closed throttle position sensor is active
   if(configPage2.CTPSEnabled == true)
@@ -591,7 +598,8 @@ void readCLT(bool useFilter)
   if(useFilter == true) { currentStatus.cltADC = LOW_PASS_FILTER(tempReading, configPage4.ADCFILTER_CLT, currentStatus.cltADC); }
   else { currentStatus.cltADC = tempReading; }
   
-  if (configPage16.timEmuCLTEnable != 2) {
+  if (configPage16.timEmuCLTEnable != 1)
+  {
     //Temperature calibration values are stored as positive bytes. We subtract 40 from them to allow for negative temperatures
     currentStatus.coolant = table2D_getValue(&cltCalibrationTable, currentStatus.cltADC) - CALIBRATION_TEMPERATURE_OFFSET;
   }
@@ -601,7 +609,12 @@ void readCLT(bool useFilter)
 void readIAT(void)
 {
   currentStatus.iatADC = LOW_PASS_FILTER(readAnalogSensor(pinIAT), configPage4.ADCFILTER_IAT, currentStatus.iatADC);
-  currentStatus.IAT = table2D_getValue(&iatCalibrationTable, currentStatus.iatADC) - CALIBRATION_TEMPERATURE_OFFSET;
+
+  if (configPage16.timEmuIATEnable != 1)
+  {
+    currentStatus.IAT = table2D_getValue(&iatCalibrationTable, currentStatus.iatADC) - CALIBRATION_TEMPERATURE_OFFSET;
+  }
+  else { currentStatus.IAT = configPage16.timEmuIATValue - CALIBRATION_TEMPERATURE_OFFSET; }
 }
 
 // ========================================== Baro ==========================================
@@ -673,18 +686,20 @@ void initialiseMAPBaro(void) {
 
 void readO2(void)
 {
-  //An O2 read is only performed if an O2 sensor type is selected. This is to prevent potentially dangerous use of the O2 readings prior to proper setup/calibration
-  if(configPage6.egoType > 0U)
+  if(configPage16.timEmuAFREnable != 1)
   {
-    currentStatus.O2ADC = LOW_PASS_FILTER(readAnalogSensor(pinO2), configPage4.ADCFILTER_O2, currentStatus.O2ADC);
-    currentStatus.O2 = table2D_getValue(&o2CalibrationTable, currentStatus.O2ADC);
-  }
-  else
-  {
-    currentStatus.O2ADC = 0U;
-    currentStatus.O2 = 0U;
-  }
-  
+    //An O2 read is only performed if an O2 sensor type is selected. This is to prevent potentially dangerous use of the O2 readings prior to proper setup/calibration
+    if(configPage6.egoType > 0U)
+    {
+      currentStatus.O2ADC = LOW_PASS_FILTER(readAnalogSensor(pinO2), configPage4.ADCFILTER_O2, currentStatus.O2ADC);
+      currentStatus.O2 = table2D_getValue(&o2CalibrationTable, currentStatus.O2ADC);
+    }
+    else
+    {
+      currentStatus.O2ADC = 0U;
+      currentStatus.O2 = 0U;
+    }
+  } else { currentStatus.O2 = configPage16.timEmuAFRValue * 10; }
 }
 
 void readO2_2(void)
