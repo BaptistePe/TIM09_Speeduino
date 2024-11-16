@@ -558,7 +558,7 @@ void readTPS(bool useFilter)
   else { currentStatus.tpsADC = tempTPS; }
   uint8_t tempADC = currentStatus.tpsADC; //The tempADC value is used in order to allow TunerStudio to recover and redo the TPS calibration if this somehow gets corrupted
 
-  if(configPage16.timEmuTPSEnable !=1)
+  if(configPage16.timEmuTPSEnable != 1)
   {
     if(configPage2.tpsMax > configPage2.tpsMin)
     {
