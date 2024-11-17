@@ -1587,6 +1587,9 @@ extern byte pinAirConComp;    // Air conditioning compressor output
 extern byte pinAirConFan;    // Stand-alone air conditioning fan output
 extern byte pinAirConRequest; // Air conditioning request input
 
+extern byte ToothEmulate;
+extern bool camEmulate;
+
 /* global variables */ // from speeduino.ino
 //#ifndef UNIT_TEST
 

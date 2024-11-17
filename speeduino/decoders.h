@@ -79,7 +79,9 @@ extern bool decoderHasFixedCrankingTiming;
 */
 
 void loggerPrimaryISR(void);
+void loggerPrimaryISR_emualte(void);
 void loggerSecondaryISR(void);
+void loggerSecondaryISR_emualte(void);
 void loggerTertiaryISR(void);
 
 //All of the below are the 6 required functions for each decoder / pattern

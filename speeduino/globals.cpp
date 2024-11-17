@@ -233,6 +233,9 @@ byte pinAirConComp;     // Air conditioning compressor output (See: auxiliaries.
 byte pinAirConFan;    // Stand-alone air conditioning fan output (See: auxiliaries.ino)
 byte pinAirConRequest;  // Air conditioning request input (See: auxiliaries.ino)
 
+byte ToothEmulate = 0;
+bool camEmulate = false;
+
 struct statuses currentStatus; /**< The master global "live" status struct. Contains all values that are updated frequently and used across modules */
 struct config2 configPage2;
 struct config4 configPage4;

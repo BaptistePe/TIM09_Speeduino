@@ -20,6 +20,7 @@ Timers are typically low resolution (Compared to Schedulers), with maximum frequ
 #include "auxiliaries.h"
 #include "comms.h"
 #include "maths.h"
+#include "decoders.h"
 
 #if defined(CORE_AVR)
   #include <avr/wdt.h>
@@ -164,6 +165,24 @@ void oneMSInterval(void) //Most ARM chips can simply call a function
       TACHO_PULSE_HIGH();
       tachoOutputFlag = TACHO_INACTIVE;
     }
+  }
+
+  ToothEmulate++;
+  if(ToothEmulate < 30)
+  {
+    loggerPrimaryISR_emualte();
+  } else { ToothEmulate = 0; }
+
+  if (ToothEmulate == 20) {
+    if (camEmulate) {
+      loggerSecondaryISR_emualte();
+    }
+  }
+  if (ToothEmulate == 22) {
+    if (camEmulate) {
+      loggerSecondaryISR_emualte();
+      camEmulate = false;
+    } else { camEmulate = true; }
   }
 
   //200Hz loop
