@@ -35,6 +35,8 @@ volatile byte loop100ms;
 volatile byte loop250ms;
 volatile int loopSec;
 
+volatile byte loopEngineCycleEmulate;
+
 volatile unsigned int dwellLimit_uS;
 
 volatile uint8_t tachoEndTime; //The time (in ms) that the tacho pulse needs to end at
@@ -58,6 +60,7 @@ void initialiseTimers(void)
   loop100ms = 0;
   loop250ms = 0;
   loopSec = 0;
+  loopEngineCycleEmulate = 0;
   tachoOutputFlag = TACHO_INACTIVE;
 }
 
@@ -88,6 +91,7 @@ void oneMSInterval(void) //Most ARM chips can simply call a function
   loop100ms++;
   loop250ms++;
   loopSec++;
+  loopEngineCycleEmulate++;
 
   //Overdwell check
   uint32_t targetOverdwellTime = micros() - dwellLimit_uS; //Set a target time in the past that all coil charging must have begun after. If the coil charge began before this time, it's been running too long
@@ -167,22 +171,26 @@ void oneMSInterval(void) //Most ARM chips can simply call a function
     }
   }
 
-  ToothEmulate++;
-  if(ToothEmulate < 30)
-  {
-    loggerPrimaryISR_emualte();
-  } else { ToothEmulate = 0; }
+  //Engine cycle emulate loop
+  if(loopEngineCycleEmulate >= configPage16.timEmuRPMValue) {
+    ToothEmulate++;
+    if(ToothEmulate < configPage4.triggerTeeth)
+    {
+      loggerPrimaryISR_emualte();
+    } else { ToothEmulate = 0; }
 
-  if (ToothEmulate == 20) {
-    if (camEmulate) {
-      loggerSecondaryISR_emualte();
+    if (ToothEmulate == configPage4.triggerTeeth / 3) {
+      if (camEmulate) {
+        loggerSecondaryISR_emualte();
+      }
     }
-  }
-  if (ToothEmulate == 22) {
-    if (camEmulate) {
-      loggerSecondaryISR_emualte();
-      camEmulate = false;
-    } else { camEmulate = true; }
+    if (ToothEmulate == configPage4.triggerTeeth / 3 + 1) {
+      if (camEmulate) {
+        loggerSecondaryISR_emualte();
+        camEmulate = false;
+      } else { camEmulate = true; }
+    }
+    loopEngineCycleEmulate = 0;
   }
 
   //200Hz loop
