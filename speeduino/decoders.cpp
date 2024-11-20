@@ -240,6 +240,12 @@ void loggerPrimaryISR(void)
   }
 }
 
+void loggerPrimaryISR_emualte(void)
+{
+  triggerHandler();
+  addToothLogEntry(curGap, TOOTH_CRANK);
+}
+
 /** Interrupt handler for secondary trigger.
 * As loggerPrimaryISR, but for the secondary trigger.
 */
@@ -263,6 +269,12 @@ void loggerSecondaryISR(void)
     //Composite logger adds an entry regardless of which edge it was
     addToothLogEntry(curGap2, TOOTH_CAM_SECONDARY);
   }
+}
+
+void loggerSecondaryISR_emualte(void)
+{
+  triggerSecondaryHandler();
+  addToothLogEntry(curGap2, TOOTH_CAM_SECONDARY);
 }
 
 /** Interrupt handler for third trigger.

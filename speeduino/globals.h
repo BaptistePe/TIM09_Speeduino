@@ -1489,13 +1489,15 @@ struct config16 {
   byte timEmuMAPEnable : 1;
   byte timEmuTPSEnable : 1;
   byte timEmuAFREnable : 1;
+  byte timEmuRPMEnable : 1;
 
-  //Bytes 1 - 5
+  //Bytes 1 - 6
   byte timEmuCLTValue;
   byte timEmuIATValue;
   byte timEmuMAPValue;
   byte timEmuTPSValue;
   byte timEmuAFRValue;
+  byte timEmuRPMValue;
 
 #if defined(CORE_AVR)
   };
@@ -1586,6 +1588,9 @@ extern byte pinSDEnable; //Input for manually enabling SD logging
 extern byte pinAirConComp;    // Air conditioning compressor output
 extern byte pinAirConFan;    // Stand-alone air conditioning fan output
 extern byte pinAirConRequest; // Air conditioning request input
+
+extern byte ToothEmulate;
+extern bool camEmulate;
 
 /* global variables */ // from speeduino.ino
 //#ifndef UNIT_TEST
