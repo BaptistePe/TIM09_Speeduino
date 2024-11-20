@@ -91,7 +91,7 @@ void oneMSInterval(void) //Most ARM chips can simply call a function
   loop100ms++;
   loop250ms++;
   loopSec++;
-  loopEngineCycleEmulate++;
+  if (configPage16.timEmuRPMEnable) { loopEngineCycleEmulate++; }
 
   //Overdwell check
   uint32_t targetOverdwellTime = micros() - dwellLimit_uS; //Set a target time in the past that all coil charging must have begun after. If the coil charge began before this time, it's been running too long
@@ -172,9 +172,9 @@ void oneMSInterval(void) //Most ARM chips can simply call a function
   }
 
   //Engine cycle emulate loop
-  if(loopEngineCycleEmulate >= configPage16.timEmuRPMValue) {
+  if (loopEngineCycleEmulate >= configPage16.timEmuRPMValue && configPage16.timEmuRPMEnable) {
     ToothEmulate++;
-    if(ToothEmulate < configPage4.triggerTeeth)
+    if (ToothEmulate < configPage4.triggerTeeth)
     {
       loggerPrimaryISR_emualte();
     } else { ToothEmulate = 0; }
