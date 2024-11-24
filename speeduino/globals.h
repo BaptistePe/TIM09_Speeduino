@@ -1478,6 +1478,34 @@ struct config15 {
   } __attribute__((__packed__)); //The 32 bit systems require all structs to be fully packed
 #endif
 
+/**
+Page 16 - TIM's settings
+2 bytes long.
+*/
+struct config16 {
+  //Bytes 0
+  byte timEmuCLTEnable : 1;
+  byte timEmuIATEnable : 1;
+  byte timEmuMAPEnable : 1;
+  byte timEmuTPSEnable : 1;
+  byte timEmuAFREnable : 1;
+  byte timEmuRPMEnable : 1;
+
+  //Bytes 1 - 6
+  byte timEmuCLTValue;
+  byte timEmuIATValue;
+  byte timEmuMAPValue;
+  byte timEmuTPSValue;
+  byte timEmuAFRValue;
+  byte timEmuRPMValue;
+
+#if defined(CORE_AVR)
+  };
+#else
+  } __attribute__((__packed__)); //The 32 bit systems require all structs to be fully packed
+#endif
+
+
 extern byte pinInjector1; //Output pin injector 1
 extern byte pinInjector2; //Output pin injector 2
 extern byte pinInjector3; //Output pin injector 3
@@ -1561,6 +1589,9 @@ extern byte pinAirConComp;    // Air conditioning compressor output
 extern byte pinAirConFan;    // Stand-alone air conditioning fan output
 extern byte pinAirConRequest; // Air conditioning request input
 
+extern byte ToothEmulate;
+extern bool camEmulate;
+
 /* global variables */ // from speeduino.ino
 //#ifndef UNIT_TEST
 
@@ -1574,6 +1605,7 @@ extern struct config9 configPage9;
 extern struct config10 configPage10;
 extern struct config13 configPage13;
 extern struct config15 configPage15;
+extern struct config16 configPage16;
 //extern byte cltCalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the coolant sensor calibration values */
 //extern byte iatCalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the inlet air temperature sensor calibration values */
 //extern byte o2CalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the O2 sensor calibration values */

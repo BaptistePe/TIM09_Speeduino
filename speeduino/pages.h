@@ -28,6 +28,7 @@ uint16_t getPageSize(byte pageNum /**< [in] The page number */ );
 #define progOutsPage  13
 #define ignMap2Page   14
 #define boostvvtPage2 15
+#define timSettings   16 //Config Page 16
 
 // ============================== Per-byte page access ==========================
 

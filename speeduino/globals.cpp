@@ -233,6 +233,9 @@ byte pinAirConComp;     // Air conditioning compressor output (See: auxiliaries.
 byte pinAirConFan;    // Stand-alone air conditioning fan output (See: auxiliaries.ino)
 byte pinAirConRequest;  // Air conditioning request input (See: auxiliaries.ino)
 
+byte ToothEmulate = 0;
+bool camEmulate = false;
+
 struct statuses currentStatus; /**< The master global "live" status struct. Contains all values that are updated frequently and used across modules */
 struct config2 configPage2;
 struct config4 configPage4;
@@ -241,6 +244,7 @@ struct config9 configPage9;
 struct config10 configPage10;
 struct config13 configPage13;
 struct config15 configPage15;
+struct config16 configPage16;
 
 //byte cltCalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the coolant sensor calibration values */
 //byte iatCalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the inlet air temperature sensor calibration values */
