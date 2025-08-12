@@ -183,7 +183,7 @@ void initialiseAll(void)
 
     // Repeatedly initialising the CAN bus hangs the system when
     // running initialisation tests on Teensy 3.5
-    #if defined(NATIVE_CAN_AVAILABLE) && !defined(UNIT_TEST)
+    #if 0 //defined(NATIVE_CAN_AVAILABLE) && !defined(UNIT_TEST)
       initCAN();
     #endif
 
@@ -2823,8 +2823,8 @@ void setPinMapping(byte boardID)
   {
     pinMode(pinCoil1, OUTPUT);
     pinMode(pinCoil2, OUTPUT);
-    pinMode(pinCoil3, OUTPUT);
-    pinMode(pinCoil4, OUTPUT);
+    // pinMode(pinCoil3, OUTPUT);
+    // pinMode(pinCoil4, OUTPUT);
     #if (IGN_CHANNELS >= 5)
     pinMode(pinCoil5, OUTPUT);
     #endif
@@ -2952,11 +2952,11 @@ void setPinMapping(byte boardID)
   {
     pinMode(pinVSS, INPUT);
   }
-  if( (configPage6.launchEnabled > 0) && (!pinIsOutput(pinLaunch)) )
-  {
-    if (configPage6.lnchPullRes == true) { pinMode(pinLaunch, INPUT_PULLUP); }
-    else { pinMode(pinLaunch, INPUT); } //If Launch Pull Resistor is not set make input float.
-  }
+  // if( (configPage6.launchEnabled > 0) && (!pinIsOutput(pinLaunch)) )
+  // {
+  //   if (configPage6.lnchPullRes == true) { pinMode(pinLaunch, INPUT_PULLUP); }
+  //   else { pinMode(pinLaunch, INPUT); } //If Launch Pull Resistor is not set make input float.
+  // }
   if( (configPage2.idleUpEnabled > 0) && (!pinIsOutput(pinIdleUp)) )
   {
     if (configPage2.idleUpPolarity == 0) { pinMode(pinIdleUp, INPUT_PULLUP); } //Normal setting

@@ -126,7 +126,7 @@ void __attribute__((always_inline)) loop(void)
           } 
         }
       #endif
-      #if defined (NATIVE_CAN_AVAILABLE)
+      #if 0 //defined (NATIVE_CAN_AVAILABLE)
         if (configPage9.enable_intcan == 1) // use internal can module
         {            
           //check local can module
@@ -215,7 +215,7 @@ void __attribute__((always_inline)) loop(void)
     {
       BIT_CLEAR(TIMER_mask, BIT_TIMER_50HZ);
 
-      #if defined(NATIVE_CAN_AVAILABLE)
+      #if 0 //defined(NATIVE_CAN_AVAILABLE)
       sendCANBroadcast(50);
       #endif
 
@@ -238,7 +238,7 @@ void __attribute__((always_inline)) loop(void)
         readO2_2();
       }
       
-      #if defined(NATIVE_CAN_AVAILABLE)
+      #if 0 //defined(NATIVE_CAN_AVAILABLE)
       sendCANBroadcast(30);
       #endif
 
@@ -265,7 +265,7 @@ void __attribute__((always_inline)) loop(void)
 
       checkLaunchAndFlatShift(); //Check for launch control and flat shift being active
 
-      #if defined(NATIVE_CAN_AVAILABLE)
+      #if 0 //defined(NATIVE_CAN_AVAILABLE)
       sendCANBroadcast(15);
       #endif
 
@@ -285,7 +285,7 @@ void __attribute__((always_inline)) loop(void)
       currentStatus.vss = getSpeed();
       currentStatus.gear = getGear();
 
-      #if defined(NATIVE_CAN_AVAILABLE)
+      #if 0 //defined(NATIVE_CAN_AVAILABLE)
       sendCANBroadcast(10);
       #endif
 

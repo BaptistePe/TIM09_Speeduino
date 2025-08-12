@@ -163,5 +163,7 @@ static inline void IGN8_TIMER_DISABLE(void) { TIMSK3 &= ~(1 << OCIE3B); } //Repl
 #endif
 #define SECONDARY_SERIAL_T HardwareSerial
 
+#define USE_CAN_MCP2515
+
 #endif //CORE_AVR
 #endif //AVR2560_H

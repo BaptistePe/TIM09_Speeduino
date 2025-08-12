@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #ifndef COMMS_CAN_H
 #define COMMS_CAN_H
 
@@ -35,14 +37,23 @@
 
 #define TS_CAN_OFFSET 0x100
 
-#if defined(NATIVE_CAN_AVAILABLE)
+#if 0 //defined(NATIVE_CAN_AVAILABLE)
+#include <mcp_can.h>
+#include <SPI.h>
+
+typedef struct {
+  uint32_t id;                 // identifiant CAN 11/29 bits
+  uint8_t  len;                // DLC
+  uint8_t  buf[8];             // data
+  struct { uint8_t extended:1; } flags; // 0 = 11 bits, 1 = 29 bits
+} CAN_message_t;
 
 void initCAN();
 int CAN_read();
 void CAN_write();
 void sendCANBroadcast(uint8_t);
 void receiveCANwbo();
-void DashMessages(uint16_t DashMessageID);
+void DashMessage(uint16_t DashMessageID);
 void can_Command(void);
 void obd_response(uint8_t therequestedPID , uint8_t therequestedPIDlow, uint8_t therequestedPIDhigh);
 void readAuxCanBus();

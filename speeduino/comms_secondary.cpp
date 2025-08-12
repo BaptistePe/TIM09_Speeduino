@@ -213,7 +213,7 @@ void sendCancommand(uint8_t cmdtype, uint16_t canaddress, uint8_t candata1, uint
         //send to truecan send routine
         //canaddress == speeduino canid, candata1 == canin channel dest, paramgroup == can address  to request from
         //This section is to be moved to the correct can output routine later
-        #if defined(NATIVE_CAN_AVAILABLE)
+        #if 0 //defined(NATIVE_CAN_AVAILABLE)
         outMsg.id = (canaddress);
         outMsg.len = 8;
         outMsg.buf[0] = 0x0B ;  //11;   

@@ -9,6 +9,92 @@ This is for handling the data broadcasted to various CAN dashes and instrument c
 */
 #include "globals.h"
 
+#if 0
+#include <mcp_can.h>
+#include <SPI.h>
+#include "comms_CAN.h"
+#include "utilities.h"
+#include "maths.h"
+
+/* brochage Speeduino (libre) */
+static const byte CAN_CS_PIN  = 22;   // CS (MCP2515 SS)
+static const byte CAN_INT_PIN = 23;   // INT du MCP2515
+
+/* MCP2515 driver */
+static MCP_CAN mcp(CAN_CS_PIN);
+
+/* On fournit un « wrapper » ayant la même interface
+   que FlexCAN_T4 (write/read) afin de ne rien changer
+   au reste du code Speeduino */
+class SpeeduinoCAN {
+  public:
+  void begin() {}                       // inutile ici
+  void setBaudRate(uint32_t) {}         // idem
+  void setMode(uint8_t mode)          { mcp.setMode(mode); }
+  /* Écriture */
+  void write(const CAN_message_t& msg) {
+    byte ext = msg.flags.extended ? 1 : 0;
+    mcp.sendMsgBuf(msg.id, ext, msg.len, (byte*)msg.buf);
+  }
+  /* Lecture : renvoie 1 si un message a été copié,
+                0 sinon                                          */
+  int read(CAN_message_t& msg) {
+    if (mcp.checkReceive() == CAN_MSGAVAIL)
+    {
+      unsigned long rxId;
+      byte len;
+      byte buf[8];
+
+      mcp.readMsgBuf(&rxId, &len, buf);
+
+      msg.id   = rxId;
+      msg.len  = len;
+      memcpy(msg.buf, buf, len);
+      msg.flags.extended = 0;       // mcp_can lib nous prévient déjà
+      return 1;
+    }
+    return 0;
+  }
+};
+/* Instance globale nommée exactement comme dans la version Teensy */
+static SpeeduinoCAN Can0;
+
+/* Buffers globaux demandés par Speeduino */
+CAN_message_t inMsg;
+CAN_message_t outMsg;
+
+/* ----------------- API requise par le reste du code --------------- */
+void initCAN() {
+  pinMode(CAN_INT_PIN, INPUT);
+
+  if (mcp.begin(MCP_STDEXT, CAN_500KBPS, MCP_8MHZ) == CAN_OK) {
+    configPage9.intcan_available = 1;       // indique “CAN dispo” à Speeduino
+    Serial.println(F("MCP2515 : OK"));
+  } else {
+    configPage9.intcan_available = 0;       // init ratée → CAN KO
+    Serial.println(F("Erreur init MCP2515"));
+  }
+  Can0.setMode(MCP_NORMAL);
+    byte data[8] = {0,1,2,3,4,5,6,7};
+  byte sendStatus = mcp.sendMsgBuf(0x100, 0, 8, data);  // id=0x100, data frame, 8 octets
+  if (sendStatus == CAN_OK) {
+    Serial.println(F("Trame envoyée"));
+  }
+  else {
+    Serial.print(F("Échec envoi : "));
+    Serial.println(sendStatus);
+  }
+}
+
+int CAN_read() {
+  return Can0.read(inMsg);
+}
+
+void CAN_write() {
+  Can0.write(outMsg);
+}
+#endif   /* MEGA2560 + MCP2515 */
+
 #if defined(NATIVE_CAN_AVAILABLE)
 #include "comms_CAN.h"
 #include "utilities.h"
@@ -57,6 +143,9 @@ void CAN_write()
 {
   Can0.write(outMsg);
 }
+
+#endif
+#if 0
 
 void sendCANBroadcast(uint8_t frequency)
 {
