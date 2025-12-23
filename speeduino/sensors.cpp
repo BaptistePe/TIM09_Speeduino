@@ -724,7 +724,7 @@ void readO2(void)
       currentStatus.O2 = 0U;
     }
   } else {
-    currentStatus.O2 = configPage16.timEmuAFRValue * 10;
+    currentStatus.O2 = configPage16.timEmuAFRValue;
   }
   /* TIM */
 }
