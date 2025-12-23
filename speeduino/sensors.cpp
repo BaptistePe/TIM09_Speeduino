@@ -567,7 +567,7 @@ void readTPS(bool useFilter)
   {
     /* TIM: feat: CAN TPS sensor */
     #if 1 // <- enable CAN TPS sensor
-    uint8_t tpsValue = (uint8_t)currentStatus.canin[1]; // Aux1
+    uint8_t tpsValue = (uint8_t)currentStatus.canin[1]; // aux1
     if (tpsValue >= 1 && tpsValue <= 8) {
       currentStatus.TPS = tpsValue * 10U * 2U;
     } else {
@@ -619,8 +619,15 @@ void readCLT(bool useFilter)
   
   /* TIM: feat: CLT sensor emulation */
   if (configPage16.timEmuCLTEnable != 1) {
+    /* TIM: feat: CAN CLT sensor */
+    #if 1 // <- enable CAN CLT sensor
+    uint16_t CLT_CAN_Value = currentStatus.canin[3]; // aux3
+    currentStatus.coolant = (uint8_t)(CLT_CAN_Value >> 8); // ex: 0x1590 -> 21.144 °C, 0x15 -> 21°C
+    #elif
     //Temperature calibration values are stored as positive bytes. We subtract 40 from them to allow for negative temperatures
     currentStatus.coolant = table2D_getValue(&cltCalibrationTable, currentStatus.cltADC) - CALIBRATION_TEMPERATURE_OFFSET;
+    #endif
+    /* TIM */
   } else {
     currentStatus.coolant = configPage16.timEmuCLTValue - CALIBRATION_TEMPERATURE_OFFSET;
   }
