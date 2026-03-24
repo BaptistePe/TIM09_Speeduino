@@ -345,4 +345,10 @@ extern int16_t toothAngles[24]; //An array for storing fixed tooth angles. Curre
 #define SKIP_TOOTH3 3
 #define SKIP_TOOTH4 4
 
+extern volatile uint16_t minRevToothCount;
+extern volatile uint16_t maxRevToothCount;
+extern volatile uint16_t syncLossToothCount;
+
+void logToothCount1Hz();
+
 #endif

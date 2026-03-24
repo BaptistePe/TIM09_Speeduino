@@ -44,6 +44,7 @@ A full copy of the license may be found in the projects root directory
 #include "timers.h"
 #include "schedule_calcs.h"
 #include "unit_testing.h"
+#include "comms.h"
 
 void nullTriggerHandler (void){return;} //initialisation function for triggerhandlers, does exactly nothing
 uint16_t nullGetRPM(void){return 0;} //initialisation function for getRpm, returns safe value of 0
@@ -58,6 +59,15 @@ void (*triggerSetEndTeeth)(void) = triggerSetEndTeeth_missingTooth; ///Pointer t
 
 static void triggerRoverMEMSCommon(void);
 static inline void triggerRecordVVT1Angle (void);
+
+volatile uint16_t minRevToothCount = 0xFFFF;
+volatile uint16_t maxRevToothCount = 0;
+static unsigned long lastToothLogTime = 0;
+volatile uint16_t syncLossToothCount = 0;
+
+volatile unsigned long toothGapHistory[4] = {0, 0, 0, 0};
+volatile byte gapHistoryIndex = 0;
+
 
 volatile unsigned long curTime;
 volatile unsigned long curGap;
@@ -544,6 +554,8 @@ void triggerSetup_missingTooth(void)
 {
   BIT_CLEAR(decoderState, BIT_DECODER_IS_SEQUENTIAL);
   triggerToothAngle = 360 / configPage4.triggerTeeth; //The number of degrees that passes from tooth to tooth
+  for(byte i=0; i<4; i++) { toothGapHistory[i] = 0; }
+  gapHistoryIndex = 0;
   if(configPage4.TrigSpeed == CAM_SPEED) 
   { 
     //Account for cam speed missing tooth
@@ -581,36 +593,85 @@ void triggerPri_missingTooth(void)
 {
    curTime = micros();
    curGap = curTime - toothLastToothTime;
-   if ( curGap >= triggerFilterTime ) //Pulses should never be less than triggerFilterTime, so if they are it means a false trigger. (A 36-1 wheel at 8000pm will have triggers approx. every 200uS)
+   
+   if ( curGap >= triggerFilterTime )
    {
-     toothCurrentCount++; //Increment the tooth counter
-     BIT_SET(decoderState, BIT_DECODER_VALID_TRIGGER); //Flag this pulse as being a valid trigger (ie that it passed filters)
+     toothCurrentCount++; 
+     BIT_SET(decoderState, BIT_DECODER_VALID_TRIGGER);
 
-     //if(toothCurrentCount > checkSyncToothCount || currentStatus.hasSync == false)
-      if( (toothLastToothTime > 0) && (toothLastMinusOneToothTime > 0) )
-      {
+     if( (toothLastToothTime > 0) && (toothLastMinusOneToothTime > 0) )
+     {
         bool isMissingTooth = false;
 
-        /*
-        Performance Optimisation:
-        Only need to try and detect the missing tooth if:
-        1. WE don't have sync yet
-        2. We have sync and are in the final 1/4 of the wheel (Missing tooth will/should never occur in the first 3/4)
-        3. RPM is under 2000. This is to ensure that we don't interfere with strange timing when cranking or idling. Optimisation not really required at these speeds anyway
-        */
+        // CALCUL DE LA MOYENNE DES 4 DERNIÈRES DENTS
+        unsigned long avgGap = (toothGapHistory[0] + toothGapHistory[1] + toothGapHistory[2] + toothGapHistory[3]) >> 2;
+
         if( (currentStatus.hasSync == false) || (currentStatus.RPM < 2000) || (toothCurrentCount >= (3 * triggerActualTeeth >> 2)) )
         {
-          //Begin the missing tooth detection
-          //If the time between the current tooth and the last is greater than 1.5x the time between the last tooth and the tooth before that, we make the assertion that we must be at the first tooth after the gap
-          if(configPage4.triggerMissingTeeth == 1) { targetGap = (3 * (toothLastToothTime - toothLastMinusOneToothTime)) >> 1; } //Multiply by 1.5 (Checks for a gap 1.5x greater than the last one) (Uses bitshift to multiply by 3 then divide by 2. Much faster than multiplying by 1.5)
-          else { targetGap = ((toothLastToothTime - toothLastMinusOneToothTime)) * configPage4.triggerMissingTeeth; } //Multiply by 2 (Checks for a gap 2x greater than the last one)
+          // Si le buffer est vide (démarrage), on utilise l'ancienne méthode, sinon la moyenne
+          unsigned long referenceGap = (avgGap > 0) ? avgGap : (toothLastToothTime - toothLastMinusOneToothTime);
+          
+          if(configPage4.triggerMissingTeeth == 1) { 
+            // On utilise un ratio de 1.5x (>>1) par rapport à la MOYENNE
+            targetGap = (3 * referenceGap) >> 1; 
+          } 
+          else { 
+            targetGap = referenceGap * configPage4.triggerMissingTeeth; 
+          }
 
-          if( (toothLastToothTime == 0) || (toothLastMinusOneToothTime == 0) ) { curGap = 0; }
+          // PROTECTION : On ne cherche la dent manquante QUE si on a un nombre de dents cohérent (Gate)
+          // Si on a sync, et qu'on est avant la dent 22, on ignore toute détection de gap (trop tôt)
+          bool toothCountValid = (currentStatus.hasSync == false) || (toothCurrentCount >= (triggerActualTeeth - 1));
 
-          if ( (curGap > targetGap) || (toothCurrentCount > triggerActualTeeth) )
+          if ( (curGap > targetGap) && toothCountValid )
           {
-            //Missing tooth detected
+            // ... (Reste du code de détection de dent manquante : isMissingTooth = true, etc)
             isMissingTooth = true;
+
+// void triggerPri_missingTooth(void)
+// {
+//    curTime = micros();
+//    curGap = curTime - toothLastToothTime;
+//    if ( curGap >= triggerFilterTime ) //Pulses should never be less than triggerFilterTime, so if they are it means a false trigger. (A 36-1 wheel at 8000pm will have triggers approx. every 200uS)
+//    {
+//      toothCurrentCount++; //Increment the tooth counter
+//      BIT_SET(decoderState, BIT_DECODER_VALID_TRIGGER); //Flag this pulse as being a valid trigger (ie that it passed filters)
+
+//      //if(toothCurrentCount > checkSyncToothCount || currentStatus.hasSync == false)
+//       if( (toothLastToothTime > 0) && (toothLastMinusOneToothTime > 0) )
+//       {
+//         bool isMissingTooth = false;
+
+//         /*
+//         Performance Optimisation:
+//         Only need to try and detect the missing tooth if:
+//         1. WE don't have sync yet
+//         2. We have sync and are in the final 1/4 of the wheel (Missing tooth will/should never occur in the first 3/4)
+//         3. RPM is under 2000. This is to ensure that we don't interfere with strange timing when cranking or idling. Optimisation not really required at these speeds anyway
+//         */
+//         if( (currentStatus.hasSync == false) || (currentStatus.RPM < 2000) || (toothCurrentCount >= (3 * triggerActualTeeth >> 2)) )
+//         {
+//           //Begin the missing tooth detection
+//           //If the time between the current tooth and the last is greater than 1.5x the time between the last tooth and the tooth before that, we make the assertion that we must be at the first tooth after the gap
+//           if(configPage4.triggerMissingTeeth == 1) { 
+//             // targetGap = (3 * (toothLastToothTime - toothLastMinusOneToothTime)) >> 1; //Multiply by 1.5 (Checks for a gap 1.5x greater than the last one) (Uses bitshift to multiply by 3 then divide by 2. Much faster than multiplying by 1.5)
+//             // targetGap = (toothLastToothTime - toothLastMinusOneToothTime) * 2; // Ratio 2.0 au lieu de 1.5
+//             // targetGap = (7 * (toothLastToothTime - toothLastMinusOneToothTime)) >> 2; // Ratio 1.75 (Multiplie par 7 puis divise par 4)
+//             targetGap = (5 * (toothLastToothTime - toothLastMinusOneToothTime)) >> 2; // 1.25
+//             // targetGap = (9 * (toothLastToothTime - toothLastMinusOneToothTime)) >> 3; // Ratio 1.125 (9/8)
+//           } 
+//           else { targetGap = ((toothLastToothTime - toothLastMinusOneToothTime)) * configPage4.triggerMissingTeeth; } //Multiply by 2 (Checks for a gap 2x greater than the last one)
+
+//           if( (toothLastToothTime == 0) || (toothLastMinusOneToothTime == 0) ) { curGap = 0; }
+
+//           if ( (curGap > targetGap) || (toothCurrentCount > triggerActualTeeth) )
+//           {
+//             if (curGap <= targetGap) {
+//               currentStatus.syncLossCounter++;
+//               syncLossToothCount++;
+//             }
+//             //Missing tooth detected
+//             isMissingTooth = true;
             if( (toothCurrentCount < triggerActualTeeth) && (currentStatus.hasSync == true) ) 
             { 
                 //This occurs when we're at tooth #1, but haven't seen all the other teeth. This indicates a signal issue so we flag lost sync so this will attempt to resync on the next revolution.
@@ -629,6 +690,8 @@ void triggerPri_missingTooth(void)
                 }
                 else { currentStatus.startRevolutions = 0; }
                 
+                if (toothCurrentCount < minRevToothCount) { minRevToothCount = toothCurrentCount; }
+                if (toothCurrentCount > maxRevToothCount) { maxRevToothCount = toothCurrentCount; }
                 toothCurrentCount = 1;
                 if (configPage4.trigPatternSec == SEC_TRIGGER_POLL) // at tooth one check if the cam sensor is high or low in poll level mode
                 {
@@ -667,6 +730,10 @@ void triggerPri_missingTooth(void)
         if(isMissingTooth == false)
         {
           //Regular (non-missing) tooth
+          // MISE À JOUR DU BUFFER MOYENNE
+          toothGapHistory[gapHistoryIndex] = curGap;
+          gapHistoryIndex++;
+          if(gapHistoryIndex >= 4) { gapHistoryIndex = 0; }
           setFilter(curGap);
           toothLastMinusOneToothTime = toothLastToothTime;
           toothLastToothTime = curTime;
@@ -848,6 +915,7 @@ int getCrankAngle_missingTooth(void)
     lastCrankAngleCalc = micros();
     elapsedTime = (lastCrankAngleCalc - tempToothLastToothTime);
     crankAngle += timeToAngleDegPerMicroSec(elapsedTime);
+    // crankAngle += timeToAngleIntervalTooth(elapsedTime);
 
     if (crankAngle >= 720) { crankAngle -= 720; }
     if (crankAngle < 0) { crankAngle += CRANK_ANGLE_MAX; }
@@ -5975,6 +6043,35 @@ void triggerSetEndTeeth_SuzukiK6A(void)
   ignition1EndTooth = calcEndTeeth_SuzukiK6A(ignition1EndAngle);
   ignition2EndTooth = calcEndTeeth_SuzukiK6A(ignition2EndAngle);
   ignition3EndTooth = calcEndTeeth_SuzukiK6A(ignition3EndAngle);
+}
+
+void logToothCount1Hz(void)
+{
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastToothLogTime >= 1000) 
+  {
+    lastToothLogTime = currentMillis;
+    
+    noInterrupts();
+    uint16_t currentMin = minRevToothCount;
+    uint16_t currentMax = maxRevToothCount;
+    uint16_t syncLoss = syncLossToothCount;
+    minRevToothCount = 0xFFFF;
+    maxRevToothCount = 0;
+    interrupts();
+    
+    if (syncLoss >= 1) {
+      primarySerial.write("!!!!!!!!!!!!!!!!!!! syncLoss: ");
+      primarySerial.print(currentStatus.syncLossCounter);
+      primarySerial.write("\n");
+      syncLossToothCount = 0;
+    }
+    primarySerial.write("Teeth count [1Hz] - Min: ");
+    primarySerial.print(currentMin & 255);
+    primarySerial.write(" | Max: ");
+    primarySerial.print(currentMax & 255);
+    primarySerial.write("\n");
+  }
 }
 
 /** @} */
