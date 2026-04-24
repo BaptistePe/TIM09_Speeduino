@@ -1205,7 +1205,6 @@ void __attribute__((always_inline)) loop(void)
       digitalWrite(pinResetControl, LOW);
       BIT_CLEAR(currentStatus.status3, BIT_STATUS3_RESET_PREVENT);
     }
-    logToothCount1Hz();
 } //loop()
 #pragma GCC diagnostic pop
 

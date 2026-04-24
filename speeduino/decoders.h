@@ -349,6 +349,4 @@ extern volatile uint16_t minRevToothCount;
 extern volatile uint16_t maxRevToothCount;
 extern volatile uint16_t syncLossToothCount;
 
-void logToothCount1Hz();
-
 #endif
