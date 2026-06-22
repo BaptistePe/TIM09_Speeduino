@@ -12,7 +12,9 @@
 #include "globals.h" // Needed for FPU_MAX_SIZE
 
 #ifndef UNIT_TEST // Scope guard for unit testing
-  #define LOG_ENTRY_SIZE      130 /**< The size of the live data packet. This MUST match ochBlockSize setting in the ini file */
+  /* TIM: feat: cumulative injection time */
+  #define LOG_ENTRY_SIZE      136 /**< The size of the live data packet. This MUST match ochBlockSize setting in the ini file */
+  /* TIM */
 #else
   #define LOG_ENTRY_SIZE      1 /**< The size of the live data packet. This MUST match ochBlockSize setting in the ini file */
 #endif

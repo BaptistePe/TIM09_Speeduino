@@ -80,6 +80,10 @@ extern bool decoderHasFixedCrankingTiming;
 
 void loggerPrimaryISR(void);
 void loggerSecondaryISR(void);
+/* TIM: feat: TDC emulation */
+void loggerPrimaryISR_emulate(void);
+void loggerSecondaryISR_emulate(void);
+/* TIM */
 void loggerTertiaryISR(void);
 
 //All of the below are the 6 required functions for each decoder / pattern
@@ -340,5 +344,9 @@ extern int16_t toothAngles[24]; //An array for storing fixed tooth angles. Curre
 #define SKIP_TOOTH2 2
 #define SKIP_TOOTH3 3
 #define SKIP_TOOTH4 4
+
+extern volatile uint16_t minRevToothCount;
+extern volatile uint16_t maxRevToothCount;
+extern volatile uint16_t syncLossToothCount;
 
 #endif

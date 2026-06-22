@@ -322,6 +322,14 @@ static inline __attribute__((always_inline)) void fuelScheduleISR(FuelSchedule &
   if (schedule.Status == PENDING) //Check to see if this schedule is turn on
   {
     schedule.pStartFunction();
+
+    /* TIM: feat: TDC emulation */
+    if (&schedule == &fuelSchedule1) {
+        currentStatus.cumulativePW += currentStatus.PW1;  // PW en us
+        currentStatus.nbInjection++;
+    }
+    /* TIM */
+
     schedule.Status = RUNNING; //Set the status to be in progress (ie The start callback has been called, but not the end callback)
     SET_COMPARE(schedule.compare, schedule.counter + uS_TO_TIMER_COMPARE(schedule.duration) ); //Doing this here prevents a potential overflow on restarts
   }

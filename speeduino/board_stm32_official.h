@@ -91,8 +91,14 @@ inline uint32_t  digitalPinToInterrupt(uint32_t Interrupt_pin) { return Interrup
 #if defined(SD_LOGGING)
   #define RTC_ENABLED
   //SD logging with STM32 uses SD card in SPI mode, because used SD library doesn't support SDIO implementation. By default SPI3 is used that uses same pins as SDIO also, but in different order.
-  extern SPIClass SD_SPI; //SPI3_MOSI, SPI3_MISO, SPI3_SCK
-  #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(50), &SD_SPI)
+  /* TIM: feat: SD logging */
+  #define SD_MISO_PIN PC8
+  #define SD_MOSI_PIN PD2
+  #define SD_SCK_PIN  PC12
+  template<uint8_t MisoPin, uint8_t MosiPin, uint8_t SckPin> class SoftSpiDriver;
+  extern SoftSpiDriver<SD_MISO_PIN, SD_MOSI_PIN, SD_SCK_PIN> SD_SoftSPI;
+  #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(0), &SD_SoftSPI)
+  /* TIM */
   //Alternatively same SPI bus can be used as there is for SPI flash. But this is not recommended due to slower speed and other possible problems.
   //#define SD_CONFIG SdSpiConfig(SD_CS_PIN, SHARED_SPI, SD_SCK_MHZ(50), &SPI_for_flash)
 #endif

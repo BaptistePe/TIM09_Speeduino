@@ -59,6 +59,9 @@ void (*triggerSetEndTeeth)(void) = triggerSetEndTeeth_missingTooth; ///Pointer t
 static void triggerRoverMEMSCommon(void);
 static inline void triggerRecordVVT1Angle (void);
 
+volatile unsigned long toothGapHistory[4] = {0, 0, 0, 0};
+volatile byte gapHistoryIndex = 0;
+
 volatile unsigned long curTime;
 volatile unsigned long curGap;
 volatile unsigned long curTime2;
@@ -264,6 +267,20 @@ void loggerSecondaryISR(void)
     addToothLogEntry(curGap2, TOOTH_CAM_SECONDARY);
   }
 }
+
+/* TIM: feat: TDC emulation */
+void loggerPrimaryISR_emulate(void)
+{
+  triggerHandler();
+  addToothLogEntry(curGap, TOOTH_CRANK);
+}
+
+void loggerSecondaryISR_emulate(void)
+{
+  triggerSecondaryHandler();
+  addToothLogEntry(curGap2, TOOTH_CAM_SECONDARY);
+}
+/* TIM */
 
 /** Interrupt handler for third trigger.
 * As loggerPrimaryISR, but for the third trigger.
@@ -530,6 +547,10 @@ void triggerSetup_missingTooth(void)
 {
   BIT_CLEAR(decoderState, BIT_DECODER_IS_SEQUENTIAL);
   triggerToothAngle = 360 / configPage4.triggerTeeth; //The number of degrees that passes from tooth to tooth
+  for (byte i=0; i<4; i++) {
+    toothGapHistory[i] = 0; 
+  }
+  gapHistoryIndex = 0;
   if(configPage4.TrigSpeed == CAM_SPEED) 
   { 
     //Account for cam speed missing tooth
@@ -567,6 +588,7 @@ void triggerPri_missingTooth(void)
 {
    curTime = micros();
    curGap = curTime - toothLastToothTime;
+   
    if ( curGap >= triggerFilterTime ) //Pulses should never be less than triggerFilterTime, so if they are it means a false trigger. (A 36-1 wheel at 8000pm will have triggers approx. every 200uS)
    {
      toothCurrentCount++; //Increment the tooth counter
@@ -577,26 +599,30 @@ void triggerPri_missingTooth(void)
       {
         bool isMissingTooth = false;
 
-        /*
-        Performance Optimisation:
-        Only need to try and detect the missing tooth if:
-        1. WE don't have sync yet
-        2. We have sync and are in the final 1/4 of the wheel (Missing tooth will/should never occur in the first 3/4)
-        3. RPM is under 2000. This is to ensure that we don't interfere with strange timing when cranking or idling. Optimisation not really required at these speeds anyway
-        */
+        // Calculating the average of the last 4 teeth
+        unsigned long avgGap = (toothGapHistory[0] + toothGapHistory[1] + toothGapHistory[2] + toothGapHistory[3]) >> 2;
+
         if( (currentStatus.hasSync == false) || (currentStatus.RPM < 2000) || (toothCurrentCount >= (3 * triggerActualTeeth >> 2)) )
         {
-          //Begin the missing tooth detection
-          //If the time between the current tooth and the last is greater than 1.5x the time between the last tooth and the tooth before that, we make the assertion that we must be at the first tooth after the gap
-          if(configPage4.triggerMissingTeeth == 1) { targetGap = (3 * (toothLastToothTime - toothLastMinusOneToothTime)) >> 1; } //Multiply by 1.5 (Checks for a gap 1.5x greater than the last one) (Uses bitshift to multiply by 3 then divide by 2. Much faster than multiplying by 1.5)
-          else { targetGap = ((toothLastToothTime - toothLastMinusOneToothTime)) * configPage4.triggerMissingTeeth; } //Multiply by 2 (Checks for a gap 2x greater than the last one)
+          //If the buffer is empty (startup), the old method is used, otherwise the average is used.
+          unsigned long referenceGap = (avgGap > 0) ? avgGap : (toothLastToothTime - toothLastMinusOneToothTime);
+          
+          if(configPage4.triggerMissingTeeth == 1) { 
+            // We use a ratio of 1.5x relative to the average
+            targetGap = (3 * referenceGap) >> 1; 
+          } 
+          else { 
+            targetGap = referenceGap * configPage4.triggerMissingTeeth; 
+          }
 
-          if( (toothLastToothTime == 0) || (toothLastMinusOneToothTime == 0) ) { curGap = 0; }
+          // PROTECTION: We only search for the missing tooth if we have a consistent number of teeth (Gate)
+          // If we have sync, and we are before tooth 22, we ignore any gap detection (too early)
+          bool toothCountValid = (currentStatus.hasSync == false) || (toothCurrentCount >= (triggerActualTeeth - 1));
 
-          if ( (curGap > targetGap) || (toothCurrentCount > triggerActualTeeth) )
+          if ( (curGap > targetGap) && toothCountValid )
           {
-            //Missing tooth detected
             isMissingTooth = true;
+
             if( (toothCurrentCount < triggerActualTeeth) && (currentStatus.hasSync == true) ) 
             { 
                 //This occurs when we're at tooth #1, but haven't seen all the other teeth. This indicates a signal issue so we flag lost sync so this will attempt to resync on the next revolution.
@@ -653,6 +679,10 @@ void triggerPri_missingTooth(void)
         if(isMissingTooth == false)
         {
           //Regular (non-missing) tooth
+          // MISE À JOUR DU BUFFER MOYENNE
+          toothGapHistory[gapHistoryIndex] = curGap;
+          gapHistoryIndex++;
+          if(gapHistoryIndex >= 4) { gapHistoryIndex = 0; }
           setFilter(curGap);
           toothLastMinusOneToothTime = toothLastToothTime;
           toothLastToothTime = curTime;
@@ -834,6 +864,7 @@ int getCrankAngle_missingTooth(void)
     lastCrankAngleCalc = micros();
     elapsedTime = (lastCrankAngleCalc - tempToothLastToothTime);
     crankAngle += timeToAngleDegPerMicroSec(elapsedTime);
+    // crankAngle += timeToAngleIntervalTooth(elapsedTime);
 
     if (crankAngle >= 720) { crankAngle -= 720; }
     if (crankAngle < 0) { crankAngle += CRANK_ANGLE_MAX; }

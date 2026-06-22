@@ -20,6 +20,9 @@ Timers are typically low resolution (Compared to Schedulers), with maximum frequ
 #include "auxiliaries.h"
 #include "comms.h"
 #include "maths.h"
+/* TIM: feat: TDC emulation */
+#include "decoders.h"
+/* TIM */
 
 #if defined(CORE_AVR)
   #include <avr/wdt.h>
@@ -33,6 +36,9 @@ volatile byte loop66ms;
 volatile byte loop100ms;
 volatile byte loop250ms;
 volatile int loopSec;
+/* TIM: feat: TDC emulation */
+volatile byte loopEngineCycleEmulate;
+/* TIM */
 
 volatile unsigned int dwellLimit_uS;
 
@@ -57,6 +63,9 @@ void initialiseTimers(void)
   loop100ms = 0;
   loop250ms = 0;
   loopSec = 0;
+  /* TIM: feat: TDC emulation */
+  loopEngineCycleEmulate = 0;
+  /* TIM */
   tachoOutputFlag = TACHO_INACTIVE;
 }
 
@@ -87,6 +96,9 @@ void oneMSInterval(void) //Most ARM chips can simply call a function
   loop100ms++;
   loop250ms++;
   loopSec++;
+  /* TIM: feat: TDC emulation */
+  if (configPage16.timEmuRPMEnable) { loopEngineCycleEmulate++; }
+  /* TIM */
 
   //Overdwell check
   uint32_t targetOverdwellTime = micros() - dwellLimit_uS; //Set a target time in the past that all coil charging must have begun after. If the coil charge began before this time, it's been running too long
@@ -165,6 +177,29 @@ void oneMSInterval(void) //Most ARM chips can simply call a function
       tachoOutputFlag = TACHO_INACTIVE;
     }
   }
+
+  /* TIM: feat: TDC emulation */
+  if (loopEngineCycleEmulate >= configPage16.timEmuRPMValue && configPage16.timEmuRPMEnable) {
+    ToothEmulate++;
+    if (ToothEmulate < configPage4.triggerTeeth)
+    {
+      loggerPrimaryISR_emulate();
+    } else { ToothEmulate = 0; }
+
+    if (ToothEmulate == configPage4.triggerTeeth / 3) {
+      if (camEmulate) {
+        loggerSecondaryISR_emulate();
+      }
+    }
+    if (ToothEmulate == configPage4.triggerTeeth / 3 + 1) {
+      if (camEmulate) {
+        loggerSecondaryISR_emulate();
+        camEmulate = false;
+      } else { camEmulate = true; }
+    }
+    loopEngineCycleEmulate = 0;
+  }
+  /* TIM */
 
   //200Hz loop
   if(loop5ms == 5)

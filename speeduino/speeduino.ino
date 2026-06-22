@@ -906,6 +906,12 @@ void __attribute__((always_inline)) loop(void)
         } 
       }
 
+      /* TIM: feat: injection button */
+      if (currentStatus.canin[0] != 1) { // aux0
+        currentStatus.PW1 = 0;
+      }
+      /* TIM */
+
 
 #if INJ_CHANNELS >= 1
       if( (maxInjOutputs >= 1) && (currentStatus.PW1 >= inj_opentime_uS) && (BIT_CHECK(fuelChannelsOn, INJ1_CMD_BIT)) )

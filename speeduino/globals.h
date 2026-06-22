@@ -646,6 +646,10 @@ struct statuses {
   unsigned int PW6; ///< In uS
   unsigned int PW7; ///< In uS
   unsigned int PW8; ///< In uS
+  /* TIM: feat: cumulative injection time */
+  uint32_t cumulativePW; ///< Cumulative injector on-time in us since boot (all channels summed)
+  uint16_t nbInjection;  ///< Cumulative number of injection since boot
+  /* TIM */
   volatile byte runSecs; /**< Counter of seconds since cranking commenced (Maxes out at 255 to prevent overflow) */
   volatile byte secl; /**< Counter incrementing once per second. Will overflow after 255 and begin again. This is used by TunerStudio to maintain comms sync */
   volatile uint32_t loopsPerSecond; /**< A performance indicator showing the number of main loops that are being executed each second */ 
@@ -1478,6 +1482,37 @@ struct config15 {
   } __attribute__((__packed__)); //The 32 bit systems require all structs to be fully packed
 #endif
 
+
+/* TIM: feat: TIM settings page */
+
+/**
+Page 16 - TIM's settings
+7 bytes long.
+*/
+struct config16 {
+  // bytes 0
+  byte timEmuCLTEnable : 1;
+  byte timEmuIATEnable : 1;
+  byte timEmuMAPEnable : 1;
+  byte timEmuTPSEnable : 1;
+  byte timEmuAFREnable : 1;
+  byte timEmuRPMEnable : 1;
+
+  // bytes 1 - 6
+  byte timEmuCLTValue;
+  byte timEmuIATValue;
+  byte timEmuMAPValue;
+  byte timEmuTPSValue;
+  byte timEmuAFRValue;
+  byte timEmuRPMValue;
+
+#if defined(CORE_AVR)
+  };
+#else
+  } __attribute__((__packed__)); //The 32 bit systems require all structs to be fully packed
+#endif
+/* TIM */
+
 extern byte pinInjector1; //Output pin injector 1
 extern byte pinInjector2; //Output pin injector 2
 extern byte pinInjector3; //Output pin injector 3
@@ -1561,6 +1596,9 @@ extern byte pinAirConComp;    // Air conditioning compressor output
 extern byte pinAirConFan;    // Stand-alone air conditioning fan output
 extern byte pinAirConRequest; // Air conditioning request input
 
+extern byte ToothEmulate;
+extern bool camEmulate;
+
 /* global variables */ // from speeduino.ino
 //#ifndef UNIT_TEST
 
@@ -1574,6 +1612,7 @@ extern struct config9 configPage9;
 extern struct config10 configPage10;
 extern struct config13 configPage13;
 extern struct config15 configPage15;
+extern struct config16 configPage16;
 //extern byte cltCalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the coolant sensor calibration values */
 //extern byte iatCalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the inlet air temperature sensor calibration values */
 //extern byte o2CalibrationTable[CALIBRATION_TABLE_SIZE]; /**< An array containing the O2 sensor calibration values */

@@ -287,7 +287,36 @@ bool STM32_CAN::read(CAN_message_t &CAN_rx_msg)
   __HAL_CAN_DISABLE_IT(n_pCanHandle, CAN_IT_RX_FIFO0_MSG_PENDING); 
   ret = removeFromRingBuffer(rxRing, CAN_rx_msg);
   __HAL_CAN_ENABLE_IT(n_pCanHandle, CAN_IT_RX_FIFO0_MSG_PENDING); 
-  return ret;
+
+  /* TIM: fix: read can extended */
+  if (!ret) return false;
+
+  if (CAN_rx_msg.flags.extended) {
+    switch (CAN_rx_msg.id) {
+      // why TIM9 have can extended frame id.. TS no support this
+      case 0x0400FD02UL: // injector button
+        CAN_rx_msg.id = 0x701;
+        CAN_rx_msg.flags.extended = 0;
+        break;
+      case 0x0200FD02UL: // carto selector
+        CAN_rx_msg.id = 0x702;
+        CAN_rx_msg.flags.extended = 0;
+        break;
+      case 0x08060140UL: // vehicle speed
+        CAN_rx_msg.id = 0x703;
+        CAN_rx_msg.flags.extended = 0;
+        break;
+      case 0x08800000UL: // motor temp
+        CAN_rx_msg.id = 0x704;
+        CAN_rx_msg.flags.extended = 0;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return true;
+  /* TIM */
 }
 
 bool STM32_CAN::setFilter(uint8_t bank_num, uint32_t filter_id, uint32_t mask, uint32_t filter_mode, uint32_t filter_scale, uint32_t fifo)
